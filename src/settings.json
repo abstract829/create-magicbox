@@ -1,0 +1,28 @@
+[
+  {
+    "type": "input",
+    "name": "name",
+    "message": "How would you like to name your project?",
+    "default": "magicbox"
+  },
+  {
+    "type": "input",
+    "name": "elasticsearchHost",
+    "message": "Enter the Elasticsearch host URL:"
+  },
+  {
+    "type": "input",
+    "name": "elasticsearchIndex",
+    "message": "Enter the Elasticsearch index:"
+  },
+  {
+    "type": "input",
+    "name": "elasticsearchApiKey",
+    "message": "Enter the Elasticsearch API key:"
+  },
+  {
+    "type": "input",
+    "name": "openaiApiKey",
+    "message": "Enter the OpenAI API key:"
+  }
+]
