@@ -1,13 +1,16 @@
 {
   "name": "create-magicbox",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "Search UI + AI Features",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --loader ts-node/esm index.ts",
+    "start": "node --loader ts-node/esm src/index.ts",
     "build": "tsc"
+  },
+  "bin": {
+    "create-magicbox": "./dist/index.js"
   },
   "files": [
     "dist/"

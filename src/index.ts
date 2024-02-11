@@ -1,7 +1,43 @@
+#!/usr/bin/env node
+
 import { Command } from "commander";
 import simpleGit from "simple-git";
-import fs from "fs/promises"; 
-import settings from "./settings.json" with {type:"json"};
+import fs from "fs/promises";
+
+const settings = [
+  {
+    type: "input",
+    name: "name",
+    message: "How would you like to name your project?",
+    default: "magicbox",
+  },
+  {
+    type: "input",
+    name: "elasticsearchHost",
+    message: "Enter the Elasticsearch host URL:",
+  },
+  {
+    type: "input",
+    name: "elasticsearchIndex",
+    message: "Enter the Elasticsearch index:",
+  },
+  {
+    type: "input",
+    name: "elasticsearchApiKey",
+    message: "Enter the Elasticsearch API key:",
+  },
+  {
+    type: "input",
+    name: "openaiApiKey",
+    message: "Enter the OpenAI API key:",
+  },
+  {
+    type: "input",
+    name: "color",
+    message: "Enter the primary color for the frontend:",
+    default: "#0070f3",
+  },
+];
 
 const program = new Command();
 const git = simpleGit();
@@ -18,11 +54,10 @@ program
     "Elasticsearch API key"
   )
   .option("--openaiApiKey <openaiApiKey>", "OpenAI API key")
-
+  .option("--color <color>", "Primary color for the frontend");
 
 program.action(async (options) => {
-
-  const filteredQuestions = settings.filter(question => {
+  const filteredQuestions = settings.filter((question) => {
     return options[question.name] === undefined;
   });
 
@@ -40,6 +75,7 @@ program.action(async (options) => {
     elasticsearchIndex,
     elasticsearchApiKey,
     openaiApiKey,
+    color,
   } = responses;
 
   const destination = name.trim() || "magicbox";
@@ -51,13 +87,17 @@ program.action(async (options) => {
 
     console.log("Creating configuration files...");
 
-    const envContent = `ELASTICSEARCH_HOST=${elasticsearchHost}
+    let envContent = `ELASTICSEARCH_HOST=${elasticsearchHost}
 ELASTICSEARCH_INDEX=${elasticsearchIndex}
 ELASTICSEARCH_API_KEY=${elasticsearchApiKey}
 OPENAI_API_KEY=${openaiApiKey}
 `;
-    await fs.writeFile(`${destination}/frontend/.env`, envContent);
     await fs.writeFile(`${destination}/backend/app/.env`, envContent);
+
+    envContent += `NEXT_PUBLIC_BACKEND_API=http://localhost:8000
+    NEXT_PUBLIC_PRIMARY_COLOR=${color}`;
+
+    await fs.writeFile(`${destination}/frontend/.env`, envContent);
 
     console.log("Build complete!");
   } catch (error) {
