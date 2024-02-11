@@ -3,44 +3,32 @@
 import { Command } from "commander";
 import simpleGit from "simple-git";
 import fs from "fs/promises";
-
-const settings = [
-  {
-    type: "input",
-    name: "name",
-    message: "How would you like to name your project?",
-    default: "magicbox",
-  },
-  {
-    type: "input",
-    name: "elasticsearchHost",
-    message: "Enter the Elasticsearch host URL:",
-  },
-  {
-    type: "input",
-    name: "elasticsearchIndex",
-    message: "Enter the Elasticsearch index:",
-  },
-  {
-    type: "input",
-    name: "elasticsearchApiKey",
-    message: "Enter the Elasticsearch API key:",
-  },
-  {
-    type: "input",
-    name: "openaiApiKey",
-    message: "Enter the OpenAI API key:",
-  },
-  {
-    type: "input",
-    name: "color",
-    message: "Enter the primary color for the frontend:",
-    default: "#0070f3",
-  },
-];
+import path from "path";
+import { fileURLToPath } from "url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const program = new Command();
 const git = simpleGit();
+
+const nameToEnv = {
+  elasticsearchHost: "ELASTICSEARCH_HOST",
+  elasticsearchIndex: "ELASTICSEARCH_INDEX",
+  elasticsearchApiKey: "ELASTICSEARCH_API_KEY",
+  openaiApiKey: "OPENAI_API_KEY",
+  color: "NEXT_PUBLIC_PRIMARY_COLOR",
+};
+
+const getEnv = (responses) => {
+  return Object.keys(responses)
+    .map((key) => {
+      const envKey = nameToEnv[key];
+
+      if (!envKey) return "";
+      return `${envKey}=${responses[key]}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+};
 
 program
   .name("clone-magicbox")
@@ -57,6 +45,17 @@ program
   .option("--color <color>", "Primary color for the frontend");
 
 program.action(async (options) => {
+  const settingsPath = path.join(__dirname, "settings.json");
+
+  let settings = [];
+  try {
+    const settingsData = await fs.readFile(settingsPath, "utf8");
+    settings = JSON.parse(settingsData);
+  } catch (err) {
+    console.error("Failed to load settings.json:", err);
+    process.exit(1); // Exit if the settings cannot be loaded
+  }
+
   const filteredQuestions = settings.filter((question) => {
     return options[question.name] === undefined;
   });
@@ -69,14 +68,7 @@ program.action(async (options) => {
     responses = { ...responses, ...inquirerResponses };
   }
 
-  const {
-    name,
-    elasticsearchHost,
-    elasticsearchIndex,
-    elasticsearchApiKey,
-    openaiApiKey,
-    color,
-  } = responses;
+  const { name } = responses;
 
   const destination = name.trim() || "magicbox";
 
@@ -87,16 +79,9 @@ program.action(async (options) => {
 
     console.log("Creating configuration files...");
 
-    let envContent = `ELASTICSEARCH_HOST=${elasticsearchHost}
-ELASTICSEARCH_INDEX=${elasticsearchIndex}
-ELASTICSEARCH_API_KEY=${elasticsearchApiKey}
-OPENAI_API_KEY=${openaiApiKey}
-`;
+    const envContent = getEnv(responses);
+
     await fs.writeFile(`${destination}/backend/app/.env`, envContent);
-
-    envContent += `NEXT_PUBLIC_BACKEND_API=http://localhost:8000
-    NEXT_PUBLIC_PRIMARY_COLOR=${color}`;
-
     await fs.writeFile(`${destination}/frontend/.env`, envContent);
 
     console.log("Build complete!");
